@@ -38,31 +38,6 @@ let products = [
     desc: 'Pastry manis dengan isian vanilla custard lembut dan toping buah beri segar.',
     img: 'images/fruit danish.webp'
   },
-  {
-    id: 'p4',
-    name: 'Chocolate Peanut Cromboloni',
-    price: 36000,
-    stock: 10,
-    tag: 'Seasonal',
-    desc: 'Pastry yang dipadukan renyahnya lapisan emas croissant yang flaky dengan ledakan selai kacang gurih dan ganache cokelat premium.',
-    img: 'images/chocolate peanut cromboloni.webp'
-  },
-  {
-    id: 'p5',
-    name: 'Pain Suisse',
-    price:  28000,
-    desc: 'Pastry lembut dan berlapis dengan isian pastry cream vanilla yang manis serta taburan chocolate chips melimpah.',
-    stock: 7,
-    img: 'images/Pain Suisse.webp'
-  },
-  {
-    id: 'p6',
-    name: 'Croffle',
-    price:  40000,
-    desc: 'Croissant yang dipanggang hingga karamelisasinya sempurna, menciptakan tekstur luar yang krispi namun dalamnya sangat lembut.',
-    stock:  0,
-    img: 'images/croffle.webp'
-  }
 ];
 
 let cart = [];
