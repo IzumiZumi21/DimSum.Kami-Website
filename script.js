@@ -4,6 +4,14 @@
 // Ganti dengan SATU-SATUNYA email Google yang diizinkan mengakses Owner Dashboard!
 const ALLOWED_OWNER_EMAIL = "aquacidcraft66@gmail.com"; 
 
+// =========================================================
+// KONFIGURASI NOMOR WHATSAPP PEMILIK TOKO
+// =========================================================
+// Ganti dengan nomor WhatsApp asli pemilik toko.
+// Format: kode negara TANPA tanda "+" dan TANPA angka 0 di depan.
+// Contoh: nomor 0812-3456-7890 -> ditulis "6281234567890"
+const OWNER_WHATSAPP_NUMBER = "6281234567890";
+
 let isOwnerAuthenticated = false;
 let currentRole = 'buyer';
 
@@ -13,30 +21,30 @@ let currentRole = 'buyer';
 let products = [
   {
     id: 'p1',
-    name: 'Butter Croissant',
-    price: 28000,
+    name: 'Dimsum Goreng Keju',
+    price: 15000,
     stock: 10,
     tag: 'Bestseller',
-    desc: 'Croissant klasik yang flaky, renyah di luar, dan lembut beraroma butter.',
-    img: 'images/butter croissant.webp'
+    desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.',
+    img: 'images/Dimsum Goreng Keju.jpg'
   },
   {
     id: 'p2',
-    name: 'Pain au Chocolat',
-    price: 32000,
+    name: 'Dimsum Goreng Mentai',
+    price: 20000,
     stock: 5,
     tag: 'Favorit',
-    desc: 'Pastry renyah berlapis dengan isian dark chocolate couverture premium.',
-    img: 'images/Pain Au Chocolate.webp'
+    desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas.',
+    img: 'images/Dimsum Goreng Mentai.jpg'
   },
   {
     id: 'p3',
-    name: 'Fruit Danish',
-    price: 35000,
+    name: 'Dimsum Goreng Original',
+    price: 10000,
     stock: 1,
-    tag: 'Seasonal',
-    desc: 'Pastry manis dengan isian vanilla custard lembut dan toping buah beri segar.',
-    img: 'images/fruit danish.webp'
+    tag: 'Basic',
+    desc: 'Dimsum yang digoreng dengan isian original, lezat dan klasik.',
+    img: 'images/Dimsum Goreng.jpg'
   },
 ];
 
@@ -151,11 +159,10 @@ function renderBuyerMenu() {
           <div class="card-footer">
             <span class="price">Rp ${p.price.toLocaleString('id-ID')}</span>
             <button 
-              class="add-btn" 
-              onclick="addToCart('${p.id}')" 
-              ${isOutOfStock ? 'disabled' : ''}
+              class="add-btn ${isOutOfStock ? 'preorder' : ''}" 
+              onclick="addToCart('${p.id}')"
             >
-              ${isOutOfStock ? 'Habis' : '+ Tambah'}
+              ${isOutOfStock ? '🔄 Pre-Order Now' : '+ Tambah'}
             </button>
           </div>
         </div>
@@ -217,7 +224,7 @@ function renderOwnerOrders() {
       </div>
       <div class="order-items-summary">
         <ul>
-          ${ord.items.map(item => `<li>• ${item.name} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString('id-ID')})</li>`).join('')}
+          ${ord.items.map(item => `<li>• ${item.name}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString('id-ID')})</li>`).join('')}
         </ul>
       </div>
       <div class="summary-row">
@@ -262,23 +269,28 @@ function toggleCart() {
   document.getElementById('cart-overlay').classList.toggle('active');
 }
 
+// Poin 3 & 4: menambahkan item ke keranjang.
+// Jika stok produk sedang habis, item otomatis ditandai sebagai Pre-Order
+// (tidak dibatasi oleh jumlah stok).
 function addToCart(productId) {
   const product = products.find(p => p.id === productId);
-  if (!product || product.stock <= 0) return;
+  if (!product) return;
 
+  const isPreOrder = product.stock <= 0;
   const cartItem = cart.find(item => item.id === productId);
+
   if (cartItem) {
-    if (cartItem.qty + 1 > product.stock) {
+    if (!isPreOrder && cartItem.qty + 1 > product.stock) {
       alert(`Maaf, stok hanya tersisa ${product.stock} pcs!`);
       return;
     }
     cartItem.qty++;
   } else {
-    cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
+    cart.push({ id: product.id, name: product.name, price: product.price, qty: 1, isPreOrder });
   }
 
   updateCartUI();
-  showToast(`${product.name} ditambahkan!`);
+  showToast(isPreOrder ? `${product.name} ditambahkan sebagai Pre-Order!` : `${product.name} ditambahkan!`);
 }
 
 function changeQty(productId, delta) {
@@ -286,7 +298,8 @@ function changeQty(productId, delta) {
   const product = products.find(p => p.id === productId);
   if (!cartItem) return;
 
-  if (delta > 0 && cartItem.qty + 1 > product.stock) {
+  // Batas stok hanya berlaku untuk item yang BUKAN pre-order
+  if (delta > 0 && !cartItem.isPreOrder && cartItem.qty + 1 > product.stock) {
     alert(`Mencapai stok maksimum (${product.stock} pcs)`);
     return;
   }
@@ -318,7 +331,7 @@ function updateCartUI() {
   container.innerHTML = cart.map(item => `
     <div class="cart-item">
       <div>
-        <h4>${item.name}</h4>
+        <h4>${item.name}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''}</h4>
         <p>Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</p>
       </div>
       <div class="qty-controls">
@@ -330,7 +343,10 @@ function updateCartUI() {
   `).join('');
 }
 
-// Proses Checkout & Kirim ke Owner
+// Poin 3 & 4: Proses Checkout.
+// Setelah data diri diisi dan tombol "Proses Pesanan Sekarang" ditekan,
+// pembeli diarahkan ke WhatsApp pemilik dengan template chat yang sudah
+// berisi data diri & rincian pesanan, sehingga pembeli tinggal menekan "send".
 function handleCheckout(e) {
   e.preventDefault();
   if (cart.length === 0) return;
@@ -340,38 +356,59 @@ function handleCheckout(e) {
   const mapsLink = document.getElementById('maps-link').value;
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-  // 1. Otomatis potong stok asli
+  // 1. Kurangi stok asli HANYA untuk item yang bukan pre-order
   cart.forEach(item => {
     const product = products.find(p => p.id === item.id);
-    if (product) {
+    if (product && !item.isPreOrder) {
       product.stock = Math.max(0, product.stock - item.qty);
     }
   });
 
-  // 2. Buat objek pesanan baru
+  // 2. Buat objek pesanan baru untuk Dashboard Owner
   const now = new Date();
   const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+  const orderId = `ORD-${Math.floor(100 + Math.random() * 900)}`;
 
   orders.unshift({
-    id: `ORD-${Math.floor(100 + Math.random() * 900)}`,
+    id: orderId,
     time: timeStr,
     customerName: name,
     address: mapsLink ? `${address} (Maps: ${mapsLink})` : address,
-    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, isPreOrder: i.isPreOrder })),
     total: total
   });
 
-  alert(`Terima kasih ${name}! Pesananmu telah diterima dan stok roti otomatis berkurang.`);
+  // 3. Susun template chat WhatsApp otomatis
+  const itemLines = cart.map(item =>
+    `- ${item.name}${item.isPreOrder ? ' (Pre-Order)' : ''} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString('id-ID')})`
+  ).join('\n');
 
-  // 3. Reset State & Refresh UI
+  const waMessageRaw =
+`Halo, saya ingin memesan dari DimSum.kami
+
+*ID Pesanan:* ${orderId}
+*Nama:* ${name}
+*Alamat:* ${address}${mapsLink ? ` (Lokasi: ${mapsLink})` : ''}
+
+*Pesanan:*
+${itemLines}
+
+*Total:* Rp ${total.toLocaleString('id-ID')}`;
+
+  const waUrl = `https://wa.me/${OWNER_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessageRaw)}`;
+
+  // 4. Reset state & refresh UI
   cart = [];
   updateCartUI();
   renderBuyerMenu();
   renderOwnerStockTable();
   renderOwnerOrders();
-
   document.getElementById('checkout-form').reset();
   toggleCart();
+
+  // 5. Arahkan pembeli ke WhatsApp Owner dengan chat yang siap dikirim
+  showToast('Pesanan dibuat! Mengarahkan ke WhatsApp...');
+  window.open(waUrl, '_blank');
 }
 
 // Deteksi GPS Google Maps

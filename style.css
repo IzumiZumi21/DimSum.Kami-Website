@@ -309,11 +309,29 @@ header {
 }
 
 .add-btn:hover { background: var(--accent-warm); color: white; }
-.add-btn:disabled {
-  border-color: var(--border-color);
-  color: var(--text-muted);
-  background: var(--border-color);
-  cursor: not-allowed;
+
+/* Poin 4: tombol Pre-Order (stok habis tapi tetap bisa diklik) */
+.add-btn.preorder {
+  background: var(--caramel);
+  border-color: var(--caramel);
+  color: white;
+}
+
+.add-btn.preorder:hover {
+  background: var(--terracotta-dark);
+  border-color: var(--terracotta-dark);
+}
+
+/* Label kecil "Pre-Order" di keranjang & daftar pesanan owner */
+.preorder-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  background: var(--caramel);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 /* --- OWNER VIEW --- */
