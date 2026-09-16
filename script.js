@@ -10,7 +10,7 @@ const ALLOWED_OWNER_EMAIL = "aquacidcraft66@gmail.com";
 // Ganti dengan nomor WhatsApp asli pemilik toko.
 // Format: kode negara TANPA tanda "+" dan TANPA angka 0 di depan.
 // Contoh: nomor 0812-3456-7890 -> ditulis "6281234567890"
-const OWNER_WHATSAPP_NUMBER = "6281234567890";
+const OWNER_WHATSAPP_NUMBER = "62859196437043";
 
 let isOwnerAuthenticated = false;
 let currentRole = 'buyer';
