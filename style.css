@@ -69,7 +69,7 @@ body {
 }
 
 .logo-large img {
-  height: 270px;
+  height: 70px;
   width: auto;
 }
 
@@ -137,7 +137,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 8%;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   z-index: 90;
 }
@@ -147,7 +147,7 @@ header {
 }
 
 .logo img {
-  height: 72px;
+  height: 60px;
   width: auto;
 }
 
