@@ -65,11 +65,12 @@ body {
 }
 
 .logo-large {
-  font-family: Georgia, serif;
-  font-size: 2.2rem;
-  color: var(--accent-warm);
-  font-weight: bold;
   margin-bottom: 8px;
+}
+
+.logo-large img {
+  height: 56px;
+  width: auto;
 }
 
 .modal-subtitle {
@@ -141,10 +142,13 @@ header {
   z-index: 90;
 }
 .logo {
-  font-family: Georgia, serif;
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: var(--accent-warm);
+  display: flex;
+  align-items: center;
+}
+
+.logo img {
+  height: 32px;
+  width: auto;
 }
 
 .header-actions {
