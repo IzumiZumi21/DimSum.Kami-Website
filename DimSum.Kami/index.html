@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DimSum.kami - Sistem Order & Owner Dashboard</title>
+  
+  <!-- SDK Resmi Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ========================================================= -->
+  <!--           MODAL PILIHAN PERAN (ROLE SELECTOR) -->
+  <!-- ========================================================= -->
+  <div id="role-modal" class="modal-screen">
+    <div class="modal-card">
+      <div class="logo-large"><img src="images/DimSum.Kami.png" alt="DimSum.kami"></div>
+      <p class="modal-subtitle">Selamat datang! Pilih peran kamu untuk menikmati dimsum goreng hangat kami.</p>
+
+      <div class="role-buttons">
+        <!-- Opsi 1: Pembeli -->
+        <button class="btn-role buyer" onclick="selectRole('buyer')">
+          <span class="role-icon">🥟</span>
+          <span class="role-title">Masuk sebagai Pembeli</span>
+          <span class="role-desc">Lihat menu, pesan dimsum goreng, & checkout</span>
+        </button>
+
+        <!-- Opsi 2: Owner (Wajib Google Auth) -->
+        <div class="owner-login-box">
+          <div class="role-desc-header">
+            <span class="role-icon">👨‍🍳</span>
+            <strong>Masuk sebagai Owner</strong>
+            <p class="role-desc">Wajib login dengan akun Google resmi toko</p>
+          </div>
+          
+          <!-- Tombol Google Sign-In -->
+          <div id="g_id_onload"
+            data-client_id="123416280427-gn0qk9nm2fkhhtdke4rlhe9p2mfa0m2o.apps.googleusercontent.com"
+            data-callback="handleGoogleLogin"
+            data-auto_prompt="false">
+          </div>
+          <div class="g_id_signin" 
+            data-type="standard" 
+            data-size="large" 
+            data-theme="outline" 
+            data-text="sign_in_with" 
+            data-shape="rectangular" 
+            data-logo_alignment="left">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ========================================================= -->
+  <!--                      NAVBAR UTAMA -->
+  <!-- ========================================================= -->
+  <header>
+    <div class="logo"><img src="images/DimSum.Kami.png" alt="DimSum.kami"></div>
+    <div class="header-actions">
+      <!-- Badge Indikator Peran Saat Ini -->
+      <button class="switch-role-btn" onclick="openRoleModal()">
+        🔄 Peran: <strong id="current-role-label">Pembeli</strong>
+      </button>
+
+      <!-- Tombol Logout Owner (Hanya tampil saat Owner sedang aktif) -->
+      <button id="owner-logout-btn" class="logout-btn hidden" onclick="logoutOwner()">
+        🚪 Logout Owner
+      </button>
+
+      <!-- Tombol Keranjang Belanja Pembeli -->
+      <button id="nav-cart-btn" class="cart-btn" onclick="toggleCart()">
+        🛒 Keranjang (<span id="cart-count">0</span>)
+      </button>
+    </div>
+  </header>
+  <!-- ========================================================= -->
+  <!--            TAMPILAN PEMBELI (BUYER VIEW) -->
+  <!-- ========================================================= -->
+  <div id="buyer-view" class="view-section">
+    <section class="hero">
+      <span class="hero-badge">🥟 Freshly Fried Every Day</span>
+      <h1>Dimsum Goreng Hangat, Renyah, dan Lezat untuk Setiap Momen</h1>
+      <p>Nikmati pilihan dimsum goreng favoritmu yang dibuat segar setiap hari dan dikirim langsung ke rumahmu.</p>
+    </section>
+
+    <main class="container">
+      <div class="section-title">
+        <h2>Menu Dimsum Goreng Hari Ini</h2>
+      </div>
+      <div id="buyer-menu-grid" class="menu-grid">
+        <!-- Card Produk Di-render via JavaScript -->
+      </div>
+    </main>
+  </div>
+  <!-- ========================================================= -->
+  <!--          TAMPILAN OWNER / ADMIN (OWNER VIEW) -->
+  <!-- ========================================================= -->
+  <div id="owner-view" class="view-section hidden">
+    <main class="container">
+      <div class="owner-header">
+        <h1>Dashboard Owner DimSum.kami</h1>
+        <p>Terverifikasi sebagai: <strong id="owner-email-display"></strong></p>
+      </div>
+      <!-- TABEL KELOLA STOK -->
+      <section class="owner-card">
+        <h2>📦 Kelola Stok Dimsum Goreng</h2>
+        <div class="table-responsive">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Produk</th>
+                <th>Harga</th>
+                <th>Stok Saat Ini</th>
+                <th>Status</th>
+                <th>Aksi Kelola Stok</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body">
+              <!-- Di-render via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <!-- DAFTAR PESANAN MASUK -->
+      <section class="owner-card">
+        <h2>📋 Daftar Pesanan Masuk</h2>
+        <div id="owner-orders-list" class="orders-list">
+          <!-- Di-render via JavaScript -->
+        </div>
+      </section>
+    </main>
+  </div>
+  <!-- ========================================================= -->
+  <!--           DRAWER KERANJANG & FORM CHECKOUT -->
+  <!-- ========================================================= -->
+  <div id="cart-overlay" class="overlay" onclick="toggleCart()"></div>
+  <aside id="cart-drawer" class="drawer">
+    <div class="drawer-header">
+      <h2>Keranjang Belanja</h2>
+      <button class="close-btn" onclick="toggleCart()">&times;</button>
+    </div>
+
+    <div class="drawer-body">
+      <div id="cart-items" class="cart-items-container">
+        <p class="empty-msg">Keranjang belanjaanmu masih kosong.</p>
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Total Pembayaran:</span>
+          <span id="cart-total-price" class="total-price">Rp 0</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <form id="checkout-form" onsubmit="handleCheckout(event)">
+        <h3>Detail Pengiriman</h3>
+        
+        <div class="form-group">
+          <label for="customer-name">Nama Pemesan *</label>
+          <input type="text" id="customer-name" placeholder="Masukkan nama lengkap" required>
+        </div>
+
+        <div class="form-group">
+          <label for="customer-address">Alamat Pengiriman *</label>
+          <textarea id="customer-address" rows="3" placeholder="Nama jalan, nomor rumah, RT/RW" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <button type="button" class="btn-location" onclick="getGoogleMapsLocation()">
+            📍 Deteksi Lokasi Saya (Google Maps)
+          </button>
+          <input type="hidden" id="maps-link">
+          <small id="location-status" class="status-text"></small>
+        </div>
+
+        <button type="submit" class="btn-checkout">Proses Pesanan Sekarang</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Notification Toast -->
+  <div id="toast">Notifikasi</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
