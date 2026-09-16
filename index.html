@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maison de Pastry - Sistem Order & Owner Dashboard</title>
+  <title>DimSum.kami - Sistem Order & Owner Dashboard</title>
   
   <!-- SDK Resmi Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -16,15 +16,15 @@
   <!-- ========================================================= -->
   <div id="role-modal" class="modal-screen">
     <div class="modal-card">
-      <div class="logo-large">Maison de Pastry.</div>
-      <p class="modal-subtitle">Selamat datang! Silakan pilih peran kamu untuk melanjutkan:</p>
+      <div class="logo-large">DimSum.kami</div>
+      <p class="modal-subtitle">Selamat datang! Pilih peran kamu untuk menikmati dimsum goreng hangat kami.</p>
 
       <div class="role-buttons">
         <!-- Opsi 1: Pembeli -->
         <button class="btn-role buyer" onclick="selectRole('buyer')">
-          <span class="role-icon">🥐</span>
+          <span class="role-icon">🥟</span>
           <span class="role-title">Masuk sebagai Pembeli</span>
-          <span class="role-desc">Lihat menu, pesan pastry, & checkout</span>
+          <span class="role-desc">Lihat menu, pesan dimsum goreng, & checkout</span>
         </button>
 
         <!-- Opsi 2: Owner (Wajib Google Auth) -->
@@ -57,7 +57,7 @@
   <!--                      NAVBAR UTAMA -->
   <!-- ========================================================= -->
   <header>
-    <div class="logo">Maison de Pastry.</div>
+    <div class="logo">DimSum.kami</div>
     <div class="header-actions">
       <!-- Badge Indikator Peran Saat Ini -->
       <button class="switch-role-btn" onclick="openRoleModal()">
@@ -80,14 +80,14 @@
   <!-- ========================================================= -->
   <div id="buyer-view" class="view-section">
     <section class="hero">
-      <span class="hero-badge">✨ Freshly Baked Everyday</span>
-      <h1>Dipanggang Hangat Setiap Pagi, Dikirim Langsung ke Rumahmu</h1>
-      <p>Pilih pastry favoritmu. Ketersediaan stok diupdate secara real-time dari dapur kami!</p>
+      <span class="hero-badge">🥟 Freshly Fried Every Day</span>
+      <h1>Dimsum Goreng Hangat, Renyah, dan Lezat untuk Setiap Momen</h1>
+      <p>Nikmati pilihan dimsum goreng favoritmu yang dibuat segar setiap hari dan dikirim langsung ke rumahmu.</p>
     </section>
 
     <main class="container">
       <div class="section-title">
-        <h2>Menu Pastry Hari Ini</h2>
+        <h2>Menu Dimsum Goreng Hari Ini</h2>
       </div>
       <div id="buyer-menu-grid" class="menu-grid">
         <!-- Card Produk Di-render via JavaScript -->
@@ -100,12 +100,12 @@
   <div id="owner-view" class="view-section hidden">
     <main class="container">
       <div class="owner-header">
-        <h1>Dashboard Owner Dapur</h1>
+        <h1>Dashboard Owner DimSum.kami</h1>
         <p>Terverifikasi sebagai: <strong id="owner-email-display"></strong></p>
       </div>
       <!-- TABEL KELOLA STOK -->
       <section class="owner-card">
-        <h2>📦 Kelola Stok Pastry</h2>
+        <h2>📦 Kelola Stok Dimsum Goreng</h2>
         <div class="table-responsive">
           <table class="stock-table">
             <thead>
