@@ -88,7 +88,7 @@ textarea:focus-visible { outline: 3px solid var(--golden); outline-offset: 2px; 
 }
 
 .logo-large { margin-bottom: 8px; }
-.logo-large img { height: 70px; width: auto; }
+.logo-large img { height: 110px; width: auto; max-width: 100%; }
 
 .modal-subtitle {
   color: var(--ink-muted);
@@ -149,13 +149,13 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
+  padding: 6px 24px;
   border-bottom: 3px solid var(--golden);
   z-index: 90;
 }
 
 .logo { display: flex; align-items: center; }
-.logo img { height: 56px; width: auto; }
+.logo img { height: 84px; width: auto; display: block; }
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
 
@@ -556,8 +556,9 @@ header {
 
 /* --- RESPONSIF --- */
 @media (max-width: 600px) {
-  header { padding: 10px 14px; }
-  .logo img { height: 44px; }
+  header { padding: 6px 14px; flex-wrap: wrap; gap: 4px; }
+  .logo img { height: 52px; }
+  .logo-large img { height: 90px; }
   .header-actions { gap: 8px; }
   .switch-role-btn, .logout-btn, .cart-btn { padding: 7px 12px; font-size: 0.8rem; }
   .hero { padding-top: 44px; padding-bottom: 52px; }
