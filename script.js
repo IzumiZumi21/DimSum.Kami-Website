@@ -1,100 +1,88 @@
-// =========================================================
-// KONFIGURASI KEAMANAN OWNER
-// =========================================================
-// Ganti dengan SATU-SATUNYA email Google yang diizinkan mengakses Owner Dashboard!
-const ALLOWED_OWNER_EMAIL = "aquacidcraft66@gmail.com"; 
+import {
+  auth, db, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+  collection, doc, onSnapshot, setDoc, runTransaction,
+  query, orderBy, serverTimestamp
+} from "./firebase.js";
 
 // =========================================================
-// KONFIGURASI NOMOR WHATSAPP PEMILIK TOKO
+// KONFIGURASI
 // =========================================================
-// Ganti dengan nomor WhatsApp asli pemilik toko.
-// Format: kode negara TANPA tanda "+" dan TANPA angka 0 di depan.
-// Contoh: nomor 0812-3456-7890 -> ditulis "6281234567890"
+const OWNER_EMAIL = "aquacidcraft66@gmail.com"; // hanya untuk UI, penjaga sebenarnya = Security Rules
 const OWNER_WHATSAPP_NUMBER = "62859196437043";
 
 let isOwnerAuthenticated = false;
 let currentRole = 'buyer';
-
-// =========================================================
-// STATE DATA APLIKASI
-// =========================================================
-let products = [
-  {
-    id: 'p1',
-    name: 'Dimsum Goreng Keju',
-    price: 15000,
-    stock: 10,
-    tag: 'Bestseller',
-    desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.',
-    img: 'images/Dimsum Goreng Keju.jpg'
-  },
-  {
-    id: 'p2',
-    name: 'Dimsum Goreng Mentai',
-    price: 20000,
-    stock: 5,
-    tag: 'Favorit',
-    desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas.',
-    img: 'images/Dimsum Goreng Mentai.jpg'
-  },
-  {
-    id: 'p3',
-    name: 'Dimsum Goreng Original',
-    price: 10000,
-    stock: 1,
-    tag: 'Basic',
-    desc: 'Dimsum yang digoreng dengan isian original, lezat dan klasik.',
-    img: 'images/Dimsum Goreng.jpg'
-  },
-];
-
+let products = [];
 let cart = [];
 let orders = [];
+let unsubOrders = null;
+
+// Cegah XSS: data dari pembeli tidak boleh dirender sebagai HTML
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
 
 // =========================================================
-// INISIALISASI
+// PRODUK REALTIME DARI FIRESTORE
 // =========================================================
-document.addEventListener('DOMContentLoaded', () => {
+onSnapshot(collection(db, "products"), (snap) => {
+  products = snap.docs.map(d => d.data()).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   renderBuyerMenu();
+  if (currentRole === 'owner') renderOwnerStockTable();
+}, (err) => {
+  console.error(err);
+  showToast("Gagal memuat produk: " + err.code);
 });
 
-// Helper Decode Token Google (JWT)
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+// =========================================================
+// LOGIN OWNER (FIREBASE AUTH)
+// =========================================================
+window.loginOwner = async () => {
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    alert("Login dibatalkan atau gagal: " + e.code);
+  }
+};
 
-  return JSON.parse(jsonPayload);
-}
-
-// Callback Respon Login Google
-function handleGoogleLogin(response) {
-  const userData = parseJwt(response.credential);
-  const loggedEmail = userData.email;
-
-  // Verifikasi Email
-  if (loggedEmail === ALLOWED_OWNER_EMAIL) {
+onAuthStateChanged(auth, async (user) => {
+  if (user && user.email === OWNER_EMAIL && user.emailVerified) {
     isOwnerAuthenticated = true;
-    showToast(`Login Berhasil! Selamat datang, Owner.`);
-    
-    document.getElementById('owner-email-display').innerText = loggedEmail;
+    document.getElementById('owner-email-display').innerText = user.email;
+    showToast("Login berhasil! Selamat datang, Owner.");
     switchToOwnerView();
+
+    if (unsubOrders) unsubOrders();
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    unsubOrders = onSnapshot(q, (snap) => {
+      orders = snap.docs.map(d => d.data());
+      renderOwnerOrders();
+    }, (err) => console.error(err));
+  } else if (user) {
+    await signOut(auth);
+    alert("❌ AKSES DITOLAK!\n\nAkun ini bukan Owner resmi.");
   } else {
     isOwnerAuthenticated = false;
-    alert(`❌ AKSES DITOLAK!\n\nEmail (${loggedEmail}) bukan akun Owner resmi.\nHanya ${ALLOWED_OWNER_EMAIL} yang berhak mengakses.`);
+    if (unsubOrders) { unsubOrders(); unsubOrders = null; }
+    orders = [];
   }
-}
+});
+
+window.logoutOwner = async () => {
+  await signOut(auth);
+  showToast("Owner berhasil logout.");
+  switchToBuyerView();
+  openRoleModal();
+};
 
 // =========================================================
 // NAVIGASI & GANTI PERAN
 // =========================================================
-function selectRole(role) {
-  if (role === 'buyer') {
-    switchToBuyerView();
-  }
-}
+window.selectRole = (role) => {
+  if (role === 'buyer') switchToBuyerView();
+};
 
 function switchToBuyerView() {
   currentRole = 'buyer';
@@ -123,45 +111,38 @@ function switchToOwnerView() {
   renderOwnerOrders();
 }
 
-function logoutOwner() {
-  isOwnerAuthenticated = false;
-  showToast("Owner berhasil logout.");
-  switchToBuyerView();
-  openRoleModal();
-}
-
-function openRoleModal() {
-  if (currentRole === 'owner' && !isOwnerAuthenticated) {
-    switchToBuyerView();
-  }
+window.openRoleModal = () => {
+  if (currentRole === 'owner' && !isOwnerAuthenticated) switchToBuyerView();
   document.getElementById('role-modal').classList.remove('hidden');
-}
+};
 
 // =========================================================
-// RENDER MENU PEMBELI & DASHBOARD OWNER
+// RENDER
 // =========================================================
 function renderBuyerMenu() {
   const container = document.getElementById('buyer-menu-grid');
-  
+
+  if (products.length === 0) {
+    container.innerHTML = '<p class="empty-msg">Memuat menu...</p>';
+    return;
+  }
+
   container.innerHTML = products.map(p => {
     const isOutOfStock = p.stock <= 0;
     return `
       <div class="card">
-        <div class="card-img" style="background-image: url('${p.img}');">
-          <span class="tag">${p.tag}</span>
+        <div class="card-img" style="background-image: url('${escapeHtml(p.img)}');">
+          <span class="tag">${escapeHtml(p.tag)}</span>
           <span class="stock-badge ${isOutOfStock ? 'out' : ''}">
             ${isOutOfStock ? 'Stok Habis' : `Sisa Stok: ${p.stock}`}
           </span>
         </div>
         <div class="card-body">
-          <h3 class="card-title">${p.name}</h3>
-          <p class="card-desc">${p.desc}</p>
+          <h3 class="card-title">${escapeHtml(p.name)}</h3>
+          <p class="card-desc">${escapeHtml(p.desc)}</p>
           <div class="card-footer">
             <span class="price">Rp ${p.price.toLocaleString('id-ID')}</span>
-            <button 
-              class="add-btn ${isOutOfStock ? 'preorder' : ''}" 
-              onclick="addToCart('${p.id}')"
-            >
+            <button class="add-btn ${isOutOfStock ? 'preorder' : ''}" onclick="addToCart('${p.id}')">
               ${isOutOfStock ? '🔄 Pre-Order Now' : '+ Tambah'}
             </button>
           </div>
@@ -173,12 +154,12 @@ function renderBuyerMenu() {
 
 function renderOwnerStockTable() {
   const tbody = document.getElementById('stock-table-body');
-  
+
   tbody.innerHTML = products.map(p => {
     const isAvailable = p.stock > 0;
     return `
       <tr>
-        <td><strong>${p.name}</strong></td>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
         <td>Rp ${p.price.toLocaleString('id-ID')}</td>
         <td><strong>${p.stock} pcs</strong></td>
         <td>
@@ -189,13 +170,8 @@ function renderOwnerStockTable() {
         <td>
           <div class="stock-control">
             <button class="btn-stock" onclick="updateStock('${p.id}', -1)">-</button>
-            <input 
-              type="number" 
-              class="input-stock" 
-              value="${p.stock}" 
-              onchange="setDirectStock('${p.id}', this.value)" 
-              min="0"
-            >
+            <input type="number" class="input-stock" value="${p.stock}"
+              onchange="setDirectStock('${p.id}', this.value)" min="0">
             <button class="btn-stock" onclick="updateStock('${p.id}', 1)">+</button>
           </div>
         </td>
@@ -206,7 +182,7 @@ function renderOwnerStockTable() {
 
 function renderOwnerOrders() {
   const container = document.getElementById('owner-orders-list');
-  
+
   if (orders.length === 0) {
     container.innerHTML = '<p class="empty-msg">Belum ada pesanan masuk.</p>';
     return;
@@ -215,64 +191,56 @@ function renderOwnerOrders() {
   container.innerHTML = orders.map(ord => `
     <div class="order-card-item">
       <div class="order-meta">
-        <span>ID: <strong>${ord.id}</strong></span>
-        <span>🕒 ${ord.time}</span>
+        <span>ID: <strong>${escapeHtml(ord.id)}</strong></span>
+        <span>🕒 ${escapeHtml(ord.time)}</span>
       </div>
       <div class="order-customer">
-        <h4>👤 ${ord.customerName}</h4>
-        <p>📍 ${ord.address}</p>
+        <h4>👤 ${escapeHtml(ord.customerName)}</h4>
+        <p>📍 ${escapeHtml(ord.address)}</p>
       </div>
       <div class="order-items-summary">
         <ul>
-          ${ord.items.map(item => `<li>• ${item.name}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString('id-ID')})</li>`).join('')}
+          ${ord.items.map(item => `<li>• ${escapeHtml(item.name)}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''} x${Number(item.qty)} (Rp ${(Number(item.price) * Number(item.qty)).toLocaleString('id-ID')})</li>`).join('')}
         </ul>
       </div>
       <div class="summary-row">
         <span>Total Pesanan:</span>
-        <span class="total-price">Rp ${ord.total.toLocaleString('id-ID')}</span>
+        <span class="total-price">Rp ${Number(ord.total).toLocaleString('id-ID')}</span>
       </div>
     </div>
   `).join('');
 }
 
 // =========================================================
-// LOGIKA EDIT STOK DARI OWNER
+// EDIT STOK OLEH OWNER
 // =========================================================
-function updateStock(productId, delta) {
-  const product = products.find(p => p.id === productId);
-  if (!product) return;
+window.updateStock = async (id, delta) => {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  try {
+    await setDoc(doc(db, "products", id), { stock: Math.max(0, p.stock + delta) }, { merge: true });
+  } catch (e) {
+    showToast("Gagal ubah stok: " + e.code);
+  }
+};
 
-  product.stock = Math.max(0, product.stock + delta);
-  
-  // Refresh UI kedua tampilan
-  renderOwnerStockTable();
-  renderBuyerMenu();
-  showToast(`Stok ${product.name}: ${product.stock}`);
-}
-
-function setDirectStock(productId, value) {
-  const product = products.find(p => p.id === productId);
-  if (!product) return;
-
-  product.stock = Math.max(0, parseInt(value) || 0);
-
-  renderOwnerStockTable();
-  renderBuyerMenu();
-  showToast(`Stok ${product.name}: ${product.stock}`);
-}
+window.setDirectStock = async (id, value) => {
+  try {
+    await setDoc(doc(db, "products", id), { stock: Math.max(0, parseInt(value) || 0) }, { merge: true });
+  } catch (e) {
+    showToast("Gagal ubah stok: " + e.code);
+  }
+};
 
 // =========================================================
-// KERANJANG & CHECKOUT PEMBELI
+// KERANJANG
 // =========================================================
-function toggleCart() {
+window.toggleCart = () => {
   document.getElementById('cart-drawer').classList.toggle('active');
   document.getElementById('cart-overlay').classList.toggle('active');
-}
+};
 
-// Poin 3 & 4: menambahkan item ke keranjang.
-// Jika stok produk sedang habis, item otomatis ditandai sebagai Pre-Order
-// (tidak dibatasi oleh jumlah stok).
-function addToCart(productId) {
+window.addToCart = (productId) => {
   const product = products.find(p => p.id === productId);
   if (!product) return;
 
@@ -291,26 +259,23 @@ function addToCart(productId) {
 
   updateCartUI();
   showToast(isPreOrder ? `${product.name} ditambahkan sebagai Pre-Order!` : `${product.name} ditambahkan!`);
-}
+};
 
-function changeQty(productId, delta) {
+window.changeQty = (productId, delta) => {
   const cartItem = cart.find(item => item.id === productId);
   const product = products.find(p => p.id === productId);
-  if (!cartItem) return;
+  if (!cartItem || !product) return;
 
-  // Batas stok hanya berlaku untuk item yang BUKAN pre-order
   if (delta > 0 && !cartItem.isPreOrder && cartItem.qty + 1 > product.stock) {
     alert(`Mencapai stok maksimum (${product.stock} pcs)`);
     return;
   }
 
   cartItem.qty += delta;
-  if (cartItem.qty <= 0) {
-    cart = cart.filter(item => item.id !== productId);
-  }
+  if (cartItem.qty <= 0) cart = cart.filter(item => item.id !== productId);
 
   updateCartUI();
-}
+};
 
 function updateCartUI() {
   const container = document.getElementById('cart-items');
@@ -331,7 +296,7 @@ function updateCartUI() {
   container.innerHTML = cart.map(item => `
     <div class="cart-item">
       <div>
-        <h4>${item.name}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''}</h4>
+        <h4>${escapeHtml(item.name)}${item.isPreOrder ? ' <span class="preorder-tag">Pre-Order</span>' : ''}</h4>
         <p>Rp ${item.price.toLocaleString('id-ID')} x ${item.qty}</p>
       </div>
       <div class="qty-controls">
@@ -343,42 +308,56 @@ function updateCartUI() {
   `).join('');
 }
 
-// Poin 3 & 4: Proses Checkout.
-// Setelah data diri diisi dan tombol "Proses Pesanan Sekarang" ditekan,
-// pembeli diarahkan ke WhatsApp pemilik dengan template chat yang sudah
-// berisi data diri & rincian pesanan, sehingga pembeli tinggal menekan "send".
-function handleCheckout(e) {
+// =========================================================
+// CHECKOUT (TRANSAKSI FIRESTORE)
+// =========================================================
+window.handleCheckout = async (e) => {
   e.preventDefault();
   if (cart.length === 0) return;
 
-  const name = document.getElementById('customer-name').value;
-  const address = document.getElementById('customer-address').value;
+  const name = document.getElementById('customer-name').value.trim();
+  const address = document.getElementById('customer-address').value.trim();
   const mapsLink = document.getElementById('maps-link').value;
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
-  // 1. Kurangi stok asli HANYA untuk item yang bukan pre-order
-  cart.forEach(item => {
-    const product = products.find(p => p.id === item.id);
-    if (product && !item.isPreOrder) {
-      product.stock = Math.max(0, product.stock - item.qty);
-    }
-  });
-
-  // 2. Buat objek pesanan baru untuk Dashboard Owner
   const now = new Date();
   const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
   const orderId = `ORD-${Math.floor(100 + Math.random() * 900)}`;
+  const items = cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, isPreOrder: !!i.isPreOrder }));
+  const fullAddress = mapsLink ? `${address} (Maps: ${mapsLink})` : address;
 
-  orders.unshift({
-    id: orderId,
-    time: timeStr,
-    customerName: name,
-    address: mapsLink ? `${address} (Maps: ${mapsLink})` : address,
-    items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, isPreOrder: i.isPreOrder })),
-    total: total
-  });
+  const stockItems = cart.filter(i => !i.isPreOrder);
+  const btn = document.querySelector('.btn-checkout');
+  btn.disabled = true;
 
-  // 3. Susun template chat WhatsApp otomatis
+  try {
+    await runTransaction(db, async (tx) => {
+      const refs = stockItems.map(i => doc(db, "products", i.id));
+      const snaps = await Promise.all(refs.map(r => tx.get(r)));   // semua BACA dulu
+
+      snaps.forEach((s, idx) => {
+        if (!s.exists() || s.data().stock < stockItems[idx].qty) {
+          throw new Error(`Stok ${stockItems[idx].name} tidak cukup. Silakan kurangi jumlah atau pesan sebagai Pre-Order.`);
+        }
+      });
+
+      snaps.forEach((s, idx) => {                                  // baru TULIS
+        tx.update(refs[idx], { stock: s.data().stock - stockItems[idx].qty });
+      });
+
+      tx.set(doc(collection(db, "orders")), {
+        id: orderId, customerName: name, address: fullAddress,
+        items, total, time: timeStr, createdAt: serverTimestamp()
+      });
+    });
+  } catch (err) {
+    alert(err.message || "Gagal memproses pesanan. Coba lagi.");
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+
+  // Template WhatsApp
   const itemLines = cart.map(item =>
     `- ${item.name}${item.isPreOrder ? ' (Pre-Order)' : ''} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString('id-ID')})`
   ).join('\n');
@@ -397,22 +376,19 @@ ${itemLines}
 
   const waUrl = `https://wa.me/${OWNER_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessageRaw)}`;
 
-  // 4. Reset state & refresh UI
   cart = [];
   updateCartUI();
-  renderBuyerMenu();
-  renderOwnerStockTable();
-  renderOwnerOrders();
   document.getElementById('checkout-form').reset();
-  toggleCart();
+  window.toggleCart();
 
-  // 5. Arahkan pembeli ke WhatsApp Owner dengan chat yang siap dikirim
   showToast('Pesanan dibuat! Mengarahkan ke WhatsApp...');
   window.open(waUrl, '_blank');
-}
+};
 
-// Deteksi GPS Google Maps
-function getGoogleMapsLocation() {
+// =========================================================
+// LOKASI & TOAST
+// =========================================================
+window.getGoogleMapsLocation = () => {
   const statusElem = document.getElementById('location-status');
   const mapsInput = document.getElementById('maps-link');
 
@@ -434,12 +410,25 @@ function getGoogleMapsLocation() {
       statusElem.style.color = "red";
     }
   );
-}
+};
 
-// Toast Notifikasi
 function showToast(message) {
   const toast = document.getElementById("toast");
   toast.innerText = message;
   toast.className = "show";
   setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
 }
+
+// =========================================================
+// ISI DATA PRODUK AWAL (jalankan SEKALI dari Console, sebagai owner)
+// =========================================================
+window.seedProducts = async () => {
+  if (!isOwnerAuthenticated) { console.warn("Login sebagai owner dulu."); return; }
+  const data = [
+    { id: 'p1', name: 'Dimsum Goreng Keju', price: 15000, stock: 10, tag: 'Bestseller', desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.', img: 'images/Dimsum Goreng Keju.jpg', order: 1 },
+    { id: 'p2', name: 'Dimsum Goreng Mentai', price: 20000, stock: 5, tag: 'Favorit', desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas.', img: 'images/Dimsum Goreng Mentai.jpg', order: 2 },
+    { id: 'p3', name: 'Dimsum Goreng Original', price: 10000, stock: 1, tag: 'Basic', desc: 'Dimsum yang digoreng dengan isian original, lezat dan klasik.', img: 'images/Dimsum Goreng.jpg', order: 3 }
+  ];
+  for (const p of data) await setDoc(doc(db, "products", p.id), p);
+  console.log("Produk berhasil diisi.");
+};
