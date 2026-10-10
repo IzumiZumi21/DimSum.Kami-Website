@@ -196,7 +196,6 @@ function renderOwnerOrders() {
       </div>
       <div class="order-customer">
         <h4>👤 ${escapeHtml(ord.customerName)}</h4>
-        <p>📍 ${escapeHtml(ord.address)}</p>
       </div>
       <div class="order-items-summary">
         <ul>
@@ -316,15 +315,12 @@ window.handleCheckout = async (e) => {
   if (cart.length === 0) return;
 
   const name = document.getElementById('customer-name').value.trim();
-  const address = document.getElementById('customer-address').value.trim();
-  const mapsLink = document.getElementById('maps-link').value;
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
   const orderId = `ORD-${Math.floor(100 + Math.random() * 900)}`;
   const items = cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, isPreOrder: !!i.isPreOrder }));
-  const fullAddress = mapsLink ? `${address} (Maps: ${mapsLink})` : address;
 
   const stockItems = cart.filter(i => !i.isPreOrder);
   const btn = document.querySelector('.btn-checkout');
@@ -346,7 +342,7 @@ window.handleCheckout = async (e) => {
       });
 
       tx.set(doc(collection(db, "orders")), {
-        id: orderId, customerName: name, address: fullAddress,
+        id: orderId, customerName: name,
         items, total, time: timeStr, createdAt: serverTimestamp()
       });
     });
@@ -367,7 +363,6 @@ window.handleCheckout = async (e) => {
 
 *ID Pesanan:* ${orderId}
 *Nama:* ${name}
-*Alamat:* ${address}${mapsLink ? ` (Lokasi: ${mapsLink})` : ''}
 
 *Pesanan:*
 ${itemLines}
@@ -386,32 +381,8 @@ ${itemLines}
 };
 
 // =========================================================
-// LOKASI & TOAST
+// TOAST
 // =========================================================
-window.getGoogleMapsLocation = () => {
-  const statusElem = document.getElementById('location-status');
-  const mapsInput = document.getElementById('maps-link');
-
-  if (!navigator.geolocation) {
-    statusElem.innerText = "GPS tidak didukung di browser ini.";
-    return;
-  }
-
-  statusElem.innerText = "Mengambil koordinat...";
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      mapsInput.value = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      statusElem.innerText = "✅ Lokasi ditemukan!";
-      statusElem.style.color = "green";
-    },
-    () => {
-      statusElem.innerText = "❌ Gagal mengambil lokasi.";
-      statusElem.style.color = "red";
-    }
-  );
-};
-
 function showToast(message) {
   const toast = document.getElementById("toast");
   toast.innerText = message;

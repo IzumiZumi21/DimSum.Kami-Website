@@ -68,7 +68,7 @@
     <section class="hero">
       <span class="hero-badge">🥟 Freshly Fried Every Day</span>
       <h1>Dimsum Goreng Hangat, Renyah, dan Lezat untuk Setiap Momen</h1>
-      <p>Nikmati pilihan dimsum goreng favoritmu yang dibuat segar setiap hari dan dikirim langsung ke rumahmu.</p>
+      <p>Nikmati pilihan dimsum goreng favoritmu yang dibuat segar setiap hari, khusus untuk warga FMIPA.</p>
     </section>
 
     <main class="container">
@@ -147,24 +147,12 @@
       <hr class="divider">
 
       <form id="checkout-form" onsubmit="handleCheckout(event)">
-        <h3>Detail Pengiriman</h3>
+        <h3>Detail Pemesan</h3>
 
         <div class="form-group">
           <label for="customer-name">Nama Pemesan *</label>
           <input type="text" id="customer-name" placeholder="Masukkan nama lengkap" maxlength="99" required>
-        </div>
-
-        <div class="form-group">
-          <label for="customer-address">Alamat Pengiriman *</label>
-          <textarea id="customer-address" rows="3" placeholder="Nama jalan, nomor rumah, RT/RW" required></textarea>
-        </div>
-
-        <div class="form-group">
-          <button type="button" class="btn-location" onclick="getGoogleMapsLocation()">
-            📍 Deteksi Lokasi Saya (Google Maps)
-          </button>
-          <input type="hidden" id="maps-link">
-          <small id="location-status" class="status-text"></small>
+          <small class="status-text">Pesananmu akan disiapkan dan diberikan kemudian hari ^^</small>
         </div>
 
         <button type="submit" class="btn-checkout">Proses Pesanan Sekarang</button>
