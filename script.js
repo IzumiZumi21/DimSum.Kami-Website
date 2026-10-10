@@ -396,9 +396,9 @@ function showToast(message) {
 window.seedProducts = async () => {
   if (!isOwnerAuthenticated) { console.warn("Login sebagai owner dulu."); return; }
   const data = [
-    { id: 'p1', name: 'Dimsum Goreng Keju', price: 15000, stock: 10, tag: 'Bestseller', desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.', img: 'images/Dimsum Goreng Keju.jpg', order: 1 },
-    { id: 'p2', name: 'Dimsum Goreng Mentai', price: 20000, stock: 5, tag: 'Favorit', desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas.', img: 'images/Dimsum Goreng Mentai.jpg', order: 2 },
-    { id: 'p3', name: 'Dimsum Goreng Original', price: 10000, stock: 1, tag: 'Basic', desc: 'Dimsum yang digoreng dengan isian original, lezat dan klasik.', img: 'images/Dimsum Goreng.jpg', order: 3 }
+    { id: 'p1', name: 'Dimsum Goreng Keju', price: 15000, stock: 0, tag: 'Bestseller', desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.', img: 'images/Dimsum Goreng Keju.jpg', order: 1 },
+    { id: 'p2', name: 'Dimsum Goreng Mentai', price: 20000, stock: 0, tag: 'Favorit', desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas-manis.', img: 'images/Dimsum Goreng Mentai.jpg', order: 2 },
+    { id: 'p3', name: 'Dimsum Goreng Original', price: 10000, stock: 0, tag: 'Basic', desc: 'Dimsum yang digoreng dengan isian original, lezat dan klasik.', img: 'images/Dimsum Goreng.jpg', order: 3 }
   ];
   for (const p of data) await setDoc(doc(db, "products", p.id), p);
   console.log("Produk berhasil diisi.");
