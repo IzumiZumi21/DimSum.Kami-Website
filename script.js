@@ -3,6 +3,7 @@ import {
   collection, doc, onSnapshot, setDoc, runTransaction,
   query, orderBy, serverTimestamp
 } from "./firebase.js";
+import { deleteDoc } from "firebase/firestore";
 
 // =========================================================
 // KONFIGURASI
@@ -57,7 +58,7 @@ onAuthStateChanged(auth, async (user) => {
     if (unsubOrders) unsubOrders();
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     unsubOrders = onSnapshot(q, (snap) => {
-      orders = snap.docs.map(d => d.data());
+      orders = snap.docs.map(d => ({ ...d.data(), docId: d.id }));
       renderOwnerOrders();
     }, (err) => console.error(err));
   } else if (user) {
@@ -190,6 +191,8 @@ function renderOwnerOrders() {
 
   container.innerHTML = orders.map(ord => `
     <div class="order-card-item">
+      <button class="btn-delete-order" title="Hapus pesanan" aria-label="Hapus pesanan ${escapeHtml(ord.id)}"
+        onclick="deleteOrder('${escapeHtml(ord.docId)}', '${escapeHtml(ord.id)}')">✕</button>
       <div class="order-meta">
         <span>ID: <strong>${escapeHtml(ord.id)}</strong></span>
         <span>🕒 ${escapeHtml(ord.time)}</span>
@@ -209,6 +212,21 @@ function renderOwnerOrders() {
     </div>
   `).join('');
 }
+
+// =========================================================
+// HAPUS PESANAN OLEH OWNER
+// =========================================================
+window.deleteOrder = async (docId, orderId) => {
+  if (!isOwnerAuthenticated) return;
+  if (!confirm(`Hapus pesanan ${orderId}?\n\nPesanan akan dihapus permanen dan tidak bisa dikembalikan.`)) return;
+
+  try {
+    await deleteDoc(doc(db, "orders", docId));
+    showToast(`Pesanan ${orderId} dihapus.`);
+  } catch (e) {
+    showToast("Gagal menghapus pesanan: " + e.code);
+  }
+};
 
 // =========================================================
 // EDIT STOK OLEH OWNER
@@ -396,8 +414,8 @@ function showToast(message) {
 window.seedProducts = async () => {
   if (!isOwnerAuthenticated) { console.warn("Login sebagai owner dulu."); return; }
   const data = [
-    { id: 'p1', name: 'Dimsum Goreng Keju', price: 13000, stock: 0, tag: 'Favorit', desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.', img: 'images/Dimsum Goreng Keju.jpg', order: 1 },
-    { id: 'p2', name: 'Dimsum Goreng Mentai', price: 15000, stock: 0, tag: 'Bestseller', desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas-manis.', img: 'images/Dimsum Goreng Mentai.jpg', order: 2 },
+    { id: 'p1', name: 'Dimsum Goreng Keju', price: 13000, stock: 10, tag: 'Bestseller', desc: 'Dimsum yang digoreng dengan isian keju lumer, lezat dan gurih.', img: 'images/Dimsum Goreng Keju.jpg', order: 1 },
+    { id: 'p2', name: 'Dimsum Goreng Mentai', price: 15000, stock: 5, tag: 'Favorit', desc: 'Dimsum yang digoreng dengan disirami saus mentai, lezat dan pedas.', img: 'images/Dimsum Goreng Mentai.jpg', order: 2 }
   ];
   for (const p of data) await setDoc(doc(db, "products", p.id), p);
   console.log("Produk berhasil diisi.");

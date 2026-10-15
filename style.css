@@ -417,6 +417,34 @@ header {
 .order-items-summary ul { list-style: none; padding-left: 0; margin: 0; }
 .order-items-summary li { margin-bottom: 4px; }
 
+/* Tombol X hapus pesanan (pojok kanan atas kartu) */
+.order-card-item { position: relative; }
+.order-meta { padding-right: 38px; }
+
+.btn-delete-order {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper-warm);
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn-delete-order:hover {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: #fff;
+}
+
 /* --- DRAWER KERANJANG & FORM --- */
 .overlay {
   position: fixed;
