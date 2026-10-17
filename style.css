@@ -560,6 +560,41 @@ header {
 .btn-checkout:hover { background: var(--chili-dark); }
 .btn-checkout:disabled { background: #c9a89c; cursor: not-allowed; }
 
+/* --- PEMBAYARAN QRIS --- */
+.qris-box {
+  margin-top: 18px;
+  padding: 16px;
+  background: #fff1d6;
+  border: 2px dashed var(--golden);
+  border-radius: 16px;
+  text-align: center;
+}
+.qris-box h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.qris-steps { margin: 0 0 12px; font-size: 0.86rem; color: var(--ink-muted); }
+.qris-steps strong { color: var(--chili); }
+.qris-img {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  margin: 0 auto 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.btn-qris-save {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--golden);
+  color: var(--fryer);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.btn-qris-save:hover { background: var(--crisp); }
+
 /* --- TOAST --- */
 #toast {
   visibility: hidden;

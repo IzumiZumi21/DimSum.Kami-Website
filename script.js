@@ -385,7 +385,8 @@ window.handleCheckout = async (e) => {
 *Pesanan:*
 ${itemLines}
 
-*Total:* Rp ${total.toLocaleString('id-ID')}`;
+*Total:* Rp ${total.toLocaleString('id-ID')}
+*Pembayaran:* QRIS (bukti bayar saya kirim di chat ini)`;
 
   const waUrl = `https://wa.me/${OWNER_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessageRaw)}`;
 
