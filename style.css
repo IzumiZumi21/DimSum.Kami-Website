@@ -304,7 +304,18 @@ header {
 
 .card-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
 .card-title { font-size: 1.25rem; font-weight: 800; margin: 0 0 6px; }
-.card-desc { color: var(--ink-muted); font-size: 0.9rem; margin: 0 0 18px; flex: 1; }
+.card-desc { color: var(--ink-muted); font-size: 0.9rem; margin: 0 0 12px; flex: 1; }
+.card-note {
+  align-self: flex-start;
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  background: #fff1d6;
+  border: 1px dashed var(--golden);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+}
 .card-footer { display: flex; justify-content: space-between; align-items: center; }
 .price { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--chili); }
 

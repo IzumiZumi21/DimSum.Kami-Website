@@ -141,6 +141,7 @@ function renderBuyerMenu() {
         <div class="card-body">
           <h3 class="card-title">${escapeHtml(p.name)}</h3>
           <p class="card-desc">${escapeHtml(p.desc)}</p>
+          <span class="card-note">🥟 1 pesanan berisi 3 dimsum</span>
           <div class="card-footer">
             <span class="price">Rp ${p.price.toLocaleString('id-ID')}</span>
             <button class="add-btn ${isOutOfStock ? 'preorder' : ''}" onclick="addToCart('${p.id}')">
